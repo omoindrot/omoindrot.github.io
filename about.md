@@ -4,7 +4,7 @@ title: About
 permalink: /about/
 ---
 
-I am **Olivier Moindrot**, a first-year master student in ICME at Stanford.
+I am **Olivier Moindrot**, a second-year master student in ICME at Stanford.
 I previously graduated from the École polytechnique in France, where I studied applied mathematics and computer science, along with a minor in entrepreneurship.
 
 My interest lies in deep learning, especially in computer vision. I have done an intership at [Reminiz](http://www.reminiz.com) in face recogition.
