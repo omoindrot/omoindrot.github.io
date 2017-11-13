@@ -12,7 +12,9 @@ comments: true
 
 #TODO: first talk about finetuning a model
 When I was a Teaching Assistant in [CS231n][cs231n], most of the student projects tried to finetune a model pre-trained on ImageNet.
-This is because they didn't have enough data to build their own model, and is often the case
+This is because they didn't have enough data to build their own model, and is often the case.
+
+- wrote a github gist
 
 - tensorflow v1.4 brings stable `tf.data` module and function `tf.estimator.train_and_evaluate`
 - good time to see what `tf.estimator` can do
