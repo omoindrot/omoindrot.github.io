@@ -10,35 +10,54 @@ use_math: true
 comments: true
 ---
 
-#TODO: first talk about finetuning a model
-When I was a Teaching Assistant in [CS231n][cs231n], most of the student projects tried to finetune a model pre-trained on ImageNet.
-This is because they didn't have enough data to build their own model, and is often the case.
 
-- wrote a github gist
+## Introduction
 
-- tensorflow v1.4 brings stable `tf.data` module and function `tf.estimator.train_and_evaluate`
-- good time to see what `tf.estimator` can do
+Most of the time in deep learning, models are not trained from scratch. This is because deep learning models require a lot of data to be trained, and we often don't have a big enough dataset.  
+The solution is to initialize the model with weights pre-trained on a bigger dataset, like ImageNet.
 
+In this post, I'll look at how to finetune a model in TensorFlow using [`tf.data`][tf-data] and [`tf.estimator`][tf-estimator]. Some inspiration comes from a [github gist][gist] I wrote for [CS231n][cs231n] (where I was a TA).
+
+Estimators have been added to the "main" tensorflow in version `1.4` under `tf.estimator`. They still feel a bit difficult to work with, and there is a lack of simple tutorials for using them.
 
 The main interest in using `tf.estimator` is that all the training procedures are already implemented, and you don't need to worry about the details of training, evaluating or sending summaries to tensorboard.
+Estimators have multiple advantages, summed up in the [official guide][tf-guide].
+
+
+The following sections will explain:
+- [how](#estimators-feel-simple-at-first) estimators are great at first sight
+- [how](#data-input) to feed data into the estimator
+- [how](#defining-the-model) to build the model
+- [how](#loading-pre-trained-weights) to load pre-trained weights
+
+
+## Estimators feel simple at first
+
 
 In a few lines of code, we can do the whole logic of training and evaluation.
 
 ```python
-estimator = tf.estimator.Estimator(model_fn, params=args, model_dir=LOG_DIR)
+estimator = tf.estimator.Estimator(model_fn)
 
-#TODO: change num_steps?
 num_steps = 10000
 
-train_spec = tf.estimator.TrainSpec(input_fn=train_input_fn, max_steps=num_steps)
+train_spec = tf.estimator.TrainSpec(input_fn=train_input_fn, num_steps=num_steps)
 eval_spec = tf.estimator.EvalSpec(input_fn=eval_input_fn)
 
 tf.estimator.train_and_evaluate(estimator, train_spec, eval_spec)
 ```
+
+
 #TODO: How to finetune a model with estimators? They have their own logic, with saving and training but getting into the model is pretty difficult.
 
 We now have to specify `train_input_fn` and `eval_input_fn` that will feed the data into the model.  
 We also have to define the model in `model_fn`.
+
+For a great example of this in action, go check out [the official blog post][estimator-blog] detailing how to build a customized estimator.
+
+
+However, the issue is that it's difficult to slightly modify estimators because the whole structure is very rigid.
+We'll see in [the last section](#loading-pre-trained-weights) how to use `tf.train.Scaffold` to initialize the weights of the model before training.
 
 ---
 ## Data input
@@ -128,7 +147,12 @@ Link: [TensorFlow home page][link]
 
 Link: [Openface blog post][openface-blog]
 
-
+[gist]: https://gist.github.com/omoindrot/dedc857cdc0e680dfb1be99762990c9c
 [cs231n]: https://cs231n.stanford.edu
 [link]: https://tensorflow.org
 [openface-blog]: http://bamos.github.io/2016/01/19/openface-0.2.0/
+[tf-guide]: https://www.tensorflow.org/programmers_guide/estimators#advantages_of_estimators
+[tf-data]: https://www.tensorflow.org/api_docs/python/tf/data
+[tf-estimator]: https://www.tensorflow.org/api_docs/python/tf/estimator
+[estimator-blog]: https://developers.googleblog.com/2017/12/creating-custom-estimators-in-tensorflow.html
+
