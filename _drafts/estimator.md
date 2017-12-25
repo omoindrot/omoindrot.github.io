@@ -10,21 +10,23 @@ use_math: true
 comments: true
 ---
 
+TODOs:
+- decide to use "I" or "we" (we when reader can be included?)
+  - check in the post at the end
+- try to justify the text?
 
-TODO: goal of the post
-- finetune a model
-  - VGG pre-trained on ImageNet
-  - new task: classify 8 animals
-- using tf.estimator
-- good example to better understand tf.estimator
+
+In this post, we'll see a concrete TensorFlow example using [`tf.data`][tf-data] and [`tf.estimator`][tf-estimator]: finetune a pre-trained model (VGG on ImageNet) on a new task. Some inspiration comes from a [github gist][my-gist] that I wrote to help students kickstart their project in [CS231n][cs231n] (where I was a TA).
+
+Getting the details of `tf.estimator` right can be difficult, but the rewards are huge. With `tf.estimator`, we get a lot of things for free: saving, evaluation, model exporting, distributed training...
+
+
 
 
 ## Introduction
 
 Most of the time in deep learning, models are not trained from scratch. This is because deep learning models require a lot of data to be trained, and we often don't have a big enough dataset.  
 The solution is to initialize the model with weights pre-trained on a bigger dataset, like ImageNet.
-
-In this post, I'll look at how to finetune a model in TensorFlow using [`tf.data`][tf-data] and [`tf.estimator`][tf-estimator]. Some inspiration comes from a [github gist][gist] I wrote for [CS231n][cs231n] (where I was a TA).
 
 Estimators have been added to the "main" tensorflow in version `1.4` under `tf.estimator`. They still feel a bit difficult to work with, and there is a lack of simple tutorials for using them.
 
@@ -236,9 +238,7 @@ For example here, we want to initialize the model with pre-trained weights.
 
 
 
-
-
-[gist]: https://gist.github.com/omoindrot/dedc857cdc0e680dfb1be99762990c9c
+[my-gist]: https://gist.github.com/omoindrot/dedc857cdc0e680dfb1be99762990c9c
 [cs231n]: https://cs231n.stanford.edu
 [link]: https://tensorflow.org
 [openface-blog]: http://bamos.github.io/2016/01/19/openface-0.2.0/
