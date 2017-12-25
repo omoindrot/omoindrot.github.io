@@ -22,7 +22,6 @@ Getting the details of `tf.estimator` right can be difficult, but the rewards ar
 
 
 
-
 ## Introduction
 
 Most of the time in deep learning, models are not trained from scratch. This is because deep learning models require a lot of data to be trained, and we often don't have a big enough dataset.  
@@ -70,6 +69,9 @@ We'll see in [the last section](#loading-pre-trained-weights) how to use `tf.tra
 ---
 ## Data input
 We have a dataset containing 8 classes of animals: `["bear", "bird", "cat", "dog", "giraffe", "horse", "sheep", "zebra"]`. For each class, we have 100 training images and 25 validation images. The images have size `(224, 224, 3)`.  
+
+TODO: put example images of each class
+
 Building a deep learning classifier on these images is pretty difficult because we don't have enough data to train it.
 
 The solution here is to use a model pre-trained on ImageNet. We'll see in the last part how to define the model and load the weights from a pre-trained model.
@@ -177,6 +179,7 @@ def model_fn(features, labels, mode, params):
     softmax_loss = tf.losses.sparse_softmax_cross_entropy(labels=labels, logits=logits)
     loss = tf.losses.get_total_loss()
 {% endhighlight %}
+
 
 
 Evaluation:
