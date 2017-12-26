@@ -20,6 +20,8 @@ In this post, we'll see a concrete TensorFlow example using [`tf.data`][tf-data]
 
 Getting the details of `tf.estimator` right can be difficult, but the rewards are huge. With `tf.estimator`, we get a lot of things for free: saving, evaluation, model exporting, distributed training...
 
+The code used in this post can be found on [github][github].
+
 
 
 ## Introduction
@@ -27,10 +29,16 @@ Getting the details of `tf.estimator` right can be difficult, but the rewards ar
 Most of the time in deep learning, models are not trained from scratch. This is because deep learning models require a lot of data to be trained, and we often don't have a big enough dataset.  
 The solution is to initialize the model with weights pre-trained on a bigger dataset, like ImageNet.
 
-Estimators have been added to the "main" tensorflow in version `1.4` under `tf.estimator`. They still feel a bit difficult to work with, and there is a lack of simple tutorials for using them.
+Estimators have been added to the "main" TensorFlow in version `1.4` under `tf.estimator`. They still feel a bit difficult to work with, and there is a lack of simple tutorials for using them.
 
 The main interest in using `tf.estimator` is that all the training procedures are already implemented, and you don't need to worry about the details of training, evaluating or sending summaries to tensorboard.
 Estimators have multiple advantages, summed up in the [official guide][tf-guide].
+
+
+Below is a diagram explaining how Estimators fit in TensorFlow ecosystem. Estimators are on the same level as Keras as they have the same purpose: make it easy to create models. Both use `tf.data` and `tf.layers`.
+
+![estimator-image]
+
 
 
 The following sections will explain:
@@ -60,7 +68,7 @@ tf.estimator.train_and_evaluate(estimator, train_spec, eval_spec)
 We now have to specify `train_input_fn` and `eval_input_fn` that will feed the data into the model.  
 We also have to define the model in `model_fn`.
 
-For a great example of this in action, go check out [the official blog post][estimator-blog] detailing how to build a customized estimator.
+For a great example of this in action, go check out [the official blog post][estimator-blog-3] detailing how to build a customized estimator.
 
 
 However, the issue is that it's difficult to slightly modify estimators because the whole structure is very rigid.
@@ -68,7 +76,7 @@ We'll see in [the last section](#loading-pre-trained-weights) how to use `tf.tra
 
 ---
 ## Data input
-We have a dataset containing 8 classes of animals: `["bear", "bird", "cat", "dog", "giraffe", "horse", "sheep", "zebra"]`. For each class, we have 100 training images and 25 validation images. The images have size `(224, 224, 3)`.  
+We have a Dataset containing 8 classes of animals: `["bear", "bird", "cat", "dog", "giraffe", "horse", "sheep", "zebra"]`. For each class, we have 100 training images and 25 validation images. The images have size `(224, 224, 3)`.  
 
 TODO: put example images of each class
 
@@ -105,13 +113,13 @@ filenames = ['img1.jpg', 'img2.jpg', 'img3.jpg']
 labels = [4, 2, 7]
 {% endhighlight %}
 
-We can build a dataset from these two lists by iterating through both files, using `tf.data.Dataset.from_tensor_slices`:
+We can build a Dataset from these two lists by iterating through both files, using `tf.data.Dataset.from_tensor_slices`:
 
 {% highlight python %}
 dataset = tf.data.Dataset.from_tensor_slices((filenames, labels))
 {% endhighlight %}
 
-Here is how we transform the dataset for training:
+Here is how we transform the Dataset for training:
 {% highlight python %}
 dataset = dataset.shuffle(buffer_size=100 * batch_size)
 dataset = dataset.repeat(num_epochs)
@@ -124,7 +132,7 @@ dataset = dataset.batch(batch_size)
 dataset = dataset.prefetch(1)  # make sure that we always have 1 batch ready
 {% endhighlight %}
 
-Finally, we create an iterator from the dataset and get the next element:
+Finally, we create an iterator from the Dataset and get the next element:
 {% highlight python %}
 # One shot iterator means it cannot be created again (once it runs out of data)
 iterator = dataset.make_one_shot_iterator()
@@ -210,9 +218,9 @@ Training:
 ## Loading pre-trained weights
 
 Everything works well if we follow the standard way to build a `tf.estimator`.  
-It gets tricky when we try to deviate from this standard, because we don't have access to the tensorflow session here.
+It gets tricky when we try to deviate from this standard, because we don't have access to the TensorFlow Session here.
 
-The estimator will take care of creating the session (a `tf.train.MonitoredSession`), save the variables and do all the work. It simplifies our code, but at the same time it makes it more complex to tinker with the model.
+The Estimator will take care of creating the session (a `tf.train.MonitoredSession`), save the variables and do all the work. It simplifies our code, but at the same time it makes it more complex to tinker with the model.
 
 
 For example here, we want to initialize the model with pre-trained weights.
@@ -220,7 +228,7 @@ For example here, we want to initialize the model with pre-trained weights.
 
 - show how we do it if we have the session
 - introduce tf.train.Scaffold
-- pass it into the estimator
+- pass it into the Estimator
 - demo that it works
 
 
@@ -239,14 +247,28 @@ For example here, we want to initialize the model with pre-trained weights.
     scaffold = tf.train.Scaffold(init_fn=init_fn)
 {% endhighlight %}
 
+## Conclusion
 
 
+### Resources
+
+- [full code][github]
+- Official programming guide for custom [`tf.estimator`][tf-guide]
+- Official blog posts about Estimators:
+  - [part 1][estimator-blog-1]: introduction to Estimators and focus on pre-made Estimators
+  - [part 2][estimator-blog-2]: usage of feature columns for data input
+  - [part 3][estimator-blog-3]: create a custom Estimator
+
+
+
+[estimator-image]: https://3.bp.blogspot.com/-l2UT45WGdyw/Wbe7au1nfwI/AAAAAAAAD1I/GeQcQUUWezIiaFFRCiMILlX2EYdG49C0wCLcBGAs/s1600/image6.png
 [my-gist]: https://gist.github.com/omoindrot/dedc857cdc0e680dfb1be99762990c9c
+[github]: https://github.com/omoindrot/tensorflow_finetune
 [cs231n]: https://cs231n.stanford.edu
-[link]: https://tensorflow.org
-[openface-blog]: http://bamos.github.io/2016/01/19/openface-0.2.0/
 [tf-guide]: https://www.tensorflow.org/programmers_guide/estimators#advantages_of_estimators
 [tf-data]: https://www.tensorflow.org/api_docs/python/tf/data
 [tf-estimator]: https://www.tensorflow.org/api_docs/python/tf/estimator
-[estimator-blog]: https://developers.googleblog.com/2017/12/creating-custom-estimators-in-tensorflow.html
+[estimator-blog-1]: https://developers.googleblog.com/2017/09/introducing-tensorflow-datasets.html
+[estimator-blog-2]: https://developers.googleblog.com/2017/11/introducing-tensorflow-feature-columns.html
+[estimator-blog-3]: https://developers.googleblog.com/2017/12/creating-custom-estimators-in-tensorflow.html
 

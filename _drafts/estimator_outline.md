@@ -5,6 +5,11 @@ Goals:
 - finetune a pre-trained model in a clean way
 - explain inner workings of `tf.estimator`?
   - already done in the TF blog post
+- explain philosophy of estimators?
+  - ex: every train creates a new session
+  - possible to change the `model_fn` while keeping the weights in `model_dir`
+  - keep it for another blog post
+  - understand better how models are saved / protobug... first
 
 
 ## Introduction
@@ -65,3 +70,6 @@ Goals:
 
 ## Conclusion
 ?
+
+### Resources
+
