@@ -20,7 +20,7 @@ In this post, we'll see a concrete TensorFlow example using [`tf.data`][tf-data]
 
 Getting the details of `tf.estimator` right can be difficult, but the rewards are huge. With `tf.estimator`, we get a lot of things for free: saving, evaluation, model exporting, distributed training...
 
-The code used in this post can be found on [github][github].
+The code used in this post can be found on [github][github]. It is commented and very readable.
 
 
 
@@ -31,21 +31,26 @@ The solution is to initialize the model with weights pre-trained on a bigger dat
 
 Estimators have been added to the "main" TensorFlow in version `1.4` under `tf.estimator`. They still feel a bit difficult to work with, and there is a lack of simple tutorials for using them.
 
-The main interest in using `tf.estimator` is that all the training procedures are already implemented, and you don't need to worry about the details of training, evaluating or sending summaries to tensorboard.
+The main interest in using `tf.estimator` is that all the training procedures are already implemented, and you don't need to worry about the details of training, evaluating or sending summaries to TensorBoard.
 Estimators have multiple advantages, summed up in the [official guide][tf-guide].
 
 
-Below is a diagram explaining how Estimators fit in TensorFlow ecosystem. Estimators are on the same level as Keras as they have the same purpose: make it easy to create models. Both use `tf.data` and `tf.layers`.
+Below is a diagram explaining how Estimators fit in TensorFlow ecosystem. Estimators are on the same level as Keras as they have the same purpose: make it easy to create models. Both can use `tf.data` and `tf.layers`.
 
-![estimator-image]
+|![estimator-image]  |
+|:--:|
+| *TensorFlow ecosystem* |  
 
+\_
+
+  
 
 
 The following sections will explain:
-- [how](#estimators-feel-simple-at-first) estimators feel simple but are not
-- [how](#data-input) to feed data into the estimator
-- [how](#defining-the-model) to build the model
-- [how](#loading-pre-trained-weights) to load pre-trained weights
+- how estimators feel simple but are not
+- how to feed data into the estimator
+- how to build the model
+- how to load pre-trained weights
 
 
 ## Estimators feel simple at first
@@ -63,26 +68,25 @@ tf.estimator.train_and_evaluate(estimator, train_spec, eval_spec)
 {% endhighlight %}
 
 
-#TODO: How to finetune a model with estimators? They have their own logic, with saving and training but getting into the model is pretty difficult.
-
-We now have to specify `train_input_fn` and `eval_input_fn` that will feed the data into the model.  
-We also have to define the model in `model_fn`.
-
-For a great example of this in action, go check out [the official blog post][estimator-blog-3] detailing how to build a customized estimator.
+We now have to specify `train_input_fn` and `eval_input_fn` that will feed the data into the model, and the `model_fn` that defines the model.  
+For a great example of this in action, go check out [the official blog post][estimator-blog-3] detailing how to build a custom estimator.
 
 
-However, the issue is that it's difficult to slightly modify estimators because the whole structure is very rigid.
-We'll see in [the last section](#loading-pre-trained-weights) how to use `tf.train.Scaffold` to initialize the weights of the model before training.
+However, the issue is that it's difficult to slightly modify estimators because the whole structure is very rigid. For instance we can't easily access the TensorFlow Session inside `model_fn`, which makes it hard to initialize weights from a pre-trained model.  
+We'll see in [the last section](#loading-pre-trained-weights) how to use `tf.train.init_from_checkpoint` to work around that.
 
 ---
 ## Data input
-We have a Dataset containing 8 classes of animals: `["bear", "bird", "cat", "dog", "giraffe", "horse", "sheep", "zebra"]`. For each class, we have 100 training images and 25 validation images. The images have size `(224, 224, 3)`.  
+We have a Dataset containing 8 classes of animals: `["bear", "bird", "cat", "dog", "giraffe", "horse", "sheep", "zebra"]`. For each class, we have 100 training images and 25 validation images.
+We resize the images to have size `(224, 224, 3)`.  
 
-TODO: put example images of each class
+![bear-image] | ![dog-image]
 
-Building a deep learning classifier on these images is pretty difficult because we don't have enough data to train it.
+<p align="center">
+<em>Left: dog, Right: bear</em>
+</p>
 
-The solution here is to use a model pre-trained on ImageNet. We'll see in the last part how to define the model and load the weights from a pre-trained model.
+Building a deep learning classifier on these images is pretty difficult because we don't have enough data to train it (only 800 training images).  
 
 
 ### A standard way to feed data
@@ -92,12 +96,6 @@ Using `tf.estimator` gives a standard way to think about data input. The interfa
 - it returns:
   - `features`: `Tensor` or dictionary of tensors
   - `labels`: `Tensor` or dictionary of tensors
-
-Example:
-{% highlight python %}
-def input_fn():
-
-{% endhighlight %}
 
 
 In our case the only features are the image itself, and the only label is the category of the image (8 categories in total).
@@ -116,12 +114,13 @@ labels = [4, 2, 7]
 We can build a Dataset from these two lists by iterating through both files, using `tf.data.Dataset.from_tensor_slices`:
 
 {% highlight python %}
-dataset = tf.data.Dataset.from_tensor_slices((filenames, labels))
+# Make sure that filenames and labels are Tensors
+dataset = tf.data.Dataset.from_tensor_slices((tf.constant(filenames), tf.constant(labels)))
 {% endhighlight %}
 
 Here is how we transform the Dataset for training:
 {% highlight python %}
-dataset = dataset.shuffle(buffer_size=100 * batch_size)
+dataset = dataset.shuffle(buffer_size=len(filenames))
 dataset = dataset.repeat(num_epochs)
 
 # Use `num_parallel_calls` to have multiple threads process the input in parallel
@@ -145,14 +144,14 @@ One great advantage of using a `tf.data.Dataset` is that we don't need to feed a
 
 Instead of using the standard method of feeding data into the graph with a `feed_dict` like this:
 {% highlight python %}
-# With tf.placeholder as input
+# With tf.placeholder as input, we need to input batches of data at each step
 sess.run(train_op, feed_dict={images: batch_img, labels: batch_labels})
 {% endhighlight %}
 
 We can directly call operations in the graph without feeding anything. The queues in `tf.data` will automatically fetch images and labels and batch them together.
 
 {% highlight python %}
-# With tf.data as input
+# With tf.data as input, no need to input anything
 sess.run(train_op)
 {% endhighlight %}
 
@@ -160,10 +159,7 @@ sess.run(train_op)
 ---
 ## Defining the model
 
-- define the model without finetune in mind
-- easy steps:
-  - define loss
-  - define training op
+The main graph used for training, evaluation and prediction is coded in the `model_fn` of the Estimator.
 
 {% highlight python %}
 def model_fn(features, labels, mode, params):
@@ -181,17 +177,9 @@ def model_fn(features, labels, mode, params):
     if mode == tf.estimator.ModeKeys.PREDICT:
         return tf.estimator.EstimatorSpec(mode, predictions=predictions)
 
-    # ---------------------------------------------------------------------
-    # Using tf.losses, any loss is added to the tf.GraphKeys.LOSSES collection
-    # We can then call the total loss easily
     softmax_loss = tf.losses.sparse_softmax_cross_entropy(labels=labels, logits=logits)
     loss = tf.losses.get_total_loss()
-{% endhighlight %}
 
-
-
-Evaluation:
-{% highlight python %}
     # Evaluation metrics
     accuracy = tf.metrics.accuracy(labels, predictions['classes'])
     eval_metric_ops = {'accuracy': accuracy}
@@ -199,18 +187,14 @@ Evaluation:
     # 2. Evaluation mode
     if mode == tf.estimator.ModeKeys.EVAL:
         return tf.estimator.EstimatorSpec(mode, loss=loss, eval_metric_ops=eval_metric_ops)
-{% endhighlight %}
 
-Training:
-{% highlight python %}
     # 3. Training mode
-    # First we want to train only the reinitialized last layer fc8 for a few epochs.
-    # We run minimize the loss only with respect to the fc8 variables (weight and bias).
+    var_list = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, 'vgg_16/fc8')
+
     optimizer = tf.train.GradientDescentOptimizer(params.learning_rate)
-    train_op = optimizer.minimize(loss, global_step=tf.train.get_global_step())
+    train_op = optimizer.minimize(loss, var_list=var_list, global_step=tf.train.get_global_step())
 
     return tf.estimator.EstimatorSpec(mode, loss=loss, train_op=train_op)
-
 {% endhighlight %}
 
 
@@ -223,44 +207,60 @@ It gets tricky when we try to deviate from this standard, because we don't have 
 The Estimator will take care of creating the session (a `tf.train.MonitoredSession`), save the variables and do all the work. It simplifies our code, but at the same time it makes it more complex to tinker with the model.
 
 
-For example here, we want to initialize the model with pre-trained weights.
+For example here, we want to initialize the model with pre-trained weights. If we didn't use Estimators, we could follow the [guidelines][tf-saver] of TensorFlow and use a Saver and the current Session to restore weights:
+{% highlight python %}
+saver = tf.train.Saver()
+with tf.Session() as sess:
+    saver.restore(sess, params.model_path)
+{% endhighlight %}
 
+It is possible to do this using the [`scaffold`][tf-scaffold] object, but here is a simpler way to initialize weights. We use `tf.train.init_from_checkpoint`, providing an `assignment_map` of variables to restore. If the string finishes with a `/`, it means we load every variable from that scope.  
+The way this works is that the variables initializers get overwritten by a constant initializer containing the pre-trained weights.
 
-- show how we do it if we have the session
-- introduce tf.train.Scaffold
-- pass it into the Estimator
-- demo that it works
+>Be careful to only load these weights in training mode, not in eval or predict.
+
+TODO: if we restart training, what happens??
+      does it load from checkpoint or load from log_dir ?
 
 
 {% highlight python %}
-    # Specify where the model checkpoint is (pretrained weights).
-    model_path = params.model_path
-    assert os.path.isfile(model_path), "Model file couldn't be found at %s" % model_path
+# Specify where the model checkpoint is (pretrained weights).
+assert os.path.isfile(params.model_path),\
+       "Model file couldn't be found at {}".format(params.model_path)
 
-    # Restore only the layers up to fc7 (included)
-    # Calling function `init_fn(sess)` will load all the pretrained weights.
-    variables_to_restore = tf.contrib.framework.get_variables_to_restore(exclude=['vgg_16/fc8'])
-    init = tf.contrib.framework.assign_from_checkpoint_fn(model_path, variables_to_restore)
-    init_fn = lambda scaffold, session: init(session)
-
-    # We need to return the initialization operation within a scaffold for tf.estimator
-    scaffold = tf.train.Scaffold(init_fn=init_fn)
+# Be careful to only run `init_from_checkpoint` in training mode
+assignment_map = {
+	'vgg_16/conv1/': 'vgg_16/conv1/',
+	'vgg_16/conv2/': 'vgg_16/conv2/',
+	'vgg_16/conv3/': 'vgg_16/conv3/',
+	'vgg_16/conv4/': 'vgg_16/conv4/',
+	'vgg_16/conv5/': 'vgg_16/conv5/',
+	'vgg_16/fc6/': 'vgg_16/fc6/',
+	'vgg_16/fc7/': 'vgg_16/fc7/',
+}
+tf.train.init_from_checkpoint(params.model_path, assignment_map)
 {% endhighlight %}
+
+Having to specify the whole `assignment_map` can feel cumbersome, but it's a good way to avoid making mistakes: all the pre-trained variables can be found in one place.
+
 
 ## Conclusion
 
 
 ### Resources
 
-- [full code][github]
+- [full code][github] (clean and commented)
 - Official programming guide for custom [`tf.estimator`][tf-guide]
 - Official blog posts about Estimators:
   - [part 1][estimator-blog-1]: introduction to Estimators and focus on pre-made Estimators
   - [part 2][estimator-blog-2]: usage of feature columns for data input
   - [part 3][estimator-blog-3]: create a custom Estimator
+- original [gist][my-gist]
 
 
 
+[bear-image]: images/bear.jpg
+[dog-image]: images/dog.jpg
 [estimator-image]: https://3.bp.blogspot.com/-l2UT45WGdyw/Wbe7au1nfwI/AAAAAAAAD1I/GeQcQUUWezIiaFFRCiMILlX2EYdG49C0wCLcBGAs/s1600/image6.png
 [my-gist]: https://gist.github.com/omoindrot/dedc857cdc0e680dfb1be99762990c9c
 [github]: https://github.com/omoindrot/tensorflow_finetune
@@ -268,6 +268,8 @@ For example here, we want to initialize the model with pre-trained weights.
 [tf-guide]: https://www.tensorflow.org/programmers_guide/estimators#advantages_of_estimators
 [tf-data]: https://www.tensorflow.org/api_docs/python/tf/data
 [tf-estimator]: https://www.tensorflow.org/api_docs/python/tf/estimator
+[tf-scaffold]: https://www.tensorflow.org/api_docs/python/tf/train/Scaffold
+[tf-saver]: https://www.tensorflow.org/programmers_guide/saved_model#restoring_variables
 [estimator-blog-1]: https://developers.googleblog.com/2017/09/introducing-tensorflow-datasets.html
 [estimator-blog-2]: https://developers.googleblog.com/2017/11/introducing-tensorflow-feature-columns.html
 [estimator-blog-3]: https://developers.googleblog.com/2017/12/creating-custom-estimators-in-tensorflow.html
