@@ -10,7 +10,7 @@ mathjax: true
 comments: true
 ---
 
-About two years ago, I answered a [question][stackoverflow] on stackoverflow about implementing triplet loss in TensorFlow and concluded by saying:
+About two years ago, I was doing face recognition during my internship at [Reminiz][reminiz] and I answered a [question][stackoverflow] on stackoverflow about implementing triplet loss in TensorFlow. I concluded by saying:
 
 >Clearly, implementing triplet loss in Tensorflow is hard, and there are ways to make it more efficient than sampling in python but explaining them would require a whole blog post !
 
@@ -96,20 +96,36 @@ The figure below shows the three corresponding regions of the embedding space fo
 
 
 <br>
-Choosing what kind of triplets we want to train on will greatly impact our metrics. In the original Facenet paper, they pick a random semi-hard negative for every pair of anchor and positive, and train on these triplets.
+Choosing what kind of triplets we want to train on will greatly impact our metrics.
+In the original Facenet [paper][facenet], they pick a random semi-hard negative for every pair of anchor and positive, and train on these triplets.
 
 ### Offline and online triplet mining
 
-- offline triplet mining:
-  - compute all embeddings
-  - produce triplets with useful loss (ex: semi-hard triplets)
-  - train on them
-- offline mining is not very efficient...
+We have defined a loss on triplets of embeddings, and have seen that some triplets are more useful than others. The question now is how to sample, or "mine" these triplets.
 
-- online triplet mining:
-  - cf. [Openface blog post][openface-blog] 
-  - gives you more triplet
-  - explanation of what is online triplet mining
+**Offline triplet mining**
+
+The first way to produce triplets is to compute them offline, at the beginning of each epoch for instance.
+We compute all the embeddings on the training set, and then only select hard or semi-hard triplets.
+We can then train one epoch on these triplets.
+
+Overall this technique is not very efficient since we need to do a full pass on the training set to generate triplets.
+It also requires to update the offline mined triplets regularly.
+
+Moreover, we need to compute $3B$ embeddings to only get $B$ triplets.
+
+<br>
+**Online triplet mining**
+
+Online triplet mining was introduced in *Facenet* and has been well described by Brandom Amos in his blog post [*OpenFace 0.2.0: Higher accuracy and halved execution time*][openface-blog].
+
+The idea here is to compute useful triplets on the fly, for each batch of inputs.
+Given a batch of $B$ examples, we can find a maximum of $B^3$ triplets.
+Of course, most of these triplets are not **valid** (i.e. they don't have 2 positives and 1 negative).
+Among valid triplets, most will be *easy triplets* with loss $0$.
+
+This technique gives you more triplets for a single batch of inputs, and doesn't require any offline mining. It is therefore much more efficient. We will see an implementation of this in the last [part](#a-better-implementation-with-online-triplet-mining).
+
 
 ### Strategies in online mining
 
@@ -122,26 +138,24 @@ Detailed explanation in the paper [*In Defense of the Triplet Loss for Person Re
 
 ## A naive implementation of triplet loss
 
-In the [stackoverflow answer][stackoverflow], I gave a simple implementation of triplet loss:
+In the [stackoverflow answer][stackoverflow], I gave a simple implementation of triplet loss for offline triplet mining:
 
 ```python
-anchor_output = ...  # shape [None, 128]
+anchor_output = ...    # shape [None, 128]
 positive_output = ...  # shape [None, 128]
 negative_output = ...  # shape [None, 128]
 
 d_pos = tf.reduce_sum(tf.square(anchor_output - positive_output), 1)
 d_neg = tf.reduce_sum(tf.square(anchor_output - negative_output), 1)
 
-loss = tf.maximum(0., margin + d_pos - d_neg)
+loss = tf.maximum(0.0, margin + d_pos - d_neg)
 loss = tf.reduce_mean(loss)
 ```
 
-- 3 replicates of the same network, shared weights
-- easiest implementation, but also very inefficient
-  - need to do a forward pass on $B$ examples to get $B/3$ triplets
-  - need to generate the triplets in some way
-    - how to make sure that the triplets are useful?
-    - offline triplet mining
+The network is replicated three times (with shared weights) to produce the embeddings of $B$ anchors, $B$ positives and $B$ negatives.
+We then simply compute the triplet loss on these embeddings.
+
+This is an easy implementation, but also a very inefficient one because it uses offline triplet mining.
 
 ---
 
@@ -208,3 +222,4 @@ Link: [Openface blog post][openface-blog]
 [stackoverflow]: https://stackoverflow.com/a/38270293/5098368
 [facenet]: https://arxiv.org/abs/1503.03832
 [in-defense]: https://arxiv.org/abs/1703.07737
+[reminiz]: https://reminiz.com
