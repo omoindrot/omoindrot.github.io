@@ -37,7 +37,7 @@ All the code can be found on this [github repository][github].
 
 ## Triplet loss and triplet mining
 
-### When is it useful
+### Why not just use softmax?
 
 The triplet loss for face recognition has been introduced by the paper [*FaceNet: A Unified Embedding for Face Recognition and Clustering*][facenet] from Google.
 They describe a new approach to build face embeddings using online triplet mining, which will be discussed in the [next section](#offline-and-online-triplet-mining).
@@ -161,26 +161,33 @@ This is an easy implementation, but also a very inefficient one because it uses 
 
 ## A better implementation with online triplet mining
 
-- see code on [github][github]
-
-- offline triplet mining is painful
-- better to do online triplet mining
+All the relevant code is available on github in file [`model/triplet_loss.py`][triplet-loss-file].
 
 
 ### Implementation in TensorFlow
 
-- existing implementation in `tf.contrib.losses`
+*There is an existing implementation of triplet loss with semi-hard online mining in TensorFlow: [`tf.contrib.losses.metric_learning.triplet_semihard_loss`][tf-triplet-loss].
+Here we will not follow this implementation and start from scratch.*
+
+
 
 **Compute the distance matrix**
 
 Since we have triplets, it will be easier to work with 3D tensors of shape $(B, B, B)$ where $B$ is the batch size. 
-Essentially, an element at index `(i, j, k)` will refer to the triplet with anchor $i$, positive $j$ and negative $k$.
+This is useful because an element at index `(i, j, k)` will refer to the triplet with anchor $i$, positive $j$ and negative $k$.
 
 We will first compute the distance matrix in an efficient way:
+
+
 - distance matrix
+
 - reshape to $(B, B, 1)$ for $d(a, p)$
 - reshape to $(B, 1, B)$ for $d(a, n)$
 
+In our case we work
+$$
+d(a, p) - d(a, n) + margin = ||a - p||^2 - ||
+$$
 
 **Batch all strategy**
 - we can combine and get the triplet loss
@@ -205,14 +212,32 @@ triplet_loss = positive_norm - 2.0 * anchor_positive_dot_product - \
 
 ### Testing our implementation
 
-- make sure that we have tests set up for every function
-  - very easy to make mistakes because TensorFlow is hard
-- implement in numpy and compare the outputs
+If you don't trust that the implementation above works as expected, then you're right!
+The only way to make sure that there is no bug in the implementation is to write tests for every function in [`model/triplet_loss.py`][triplet-loss-file]
+
+This is especially important for tricky functions like this that are difficult to implement in TensorFlow but much easier to write using three nested for loops in python for instance.
+The tests are written in [`tests/test_triplet_loss.py`][triplet-loss-test], and compare the result of our TensorFlow implementation with the results of a simple numpy implementation.
+
+To check yourself that the tests pass, run:
+```bash
+python -m tests.test_triplet_loss
+```
+
+## Conclusion
+
+TensorFlow doesn't make it easy to implement triplet loss, but with a bit of effort we can build a good-looking version of triplet loss with online mining.
+
+The tricky part is mostly how to compute efficiently the distances between embeddings, and how to mask out the invalid / easy triplets.
 
 
 ## Resources
 
-Link: [Openface blog post][openface-blog]
+- [github repo][github] for this blog post
+- [Facenet paper][facenet]
+- Detailed explanation of online triplet mining in [*In Defense of the Triplet Loss for Person Re-Identification*][in-defense]
+- blog post by Brandom Amos on online triplet mining: [*OpenFace 0.2.0: Higher accuracy and halved execution time*][openface-blog].
+- source code for the built-in TensorFlow function for semi hard online mining triplet loss: [`tf.contrib.losses.metric_learning.triplet_semihard_loss`][tf-triplet-loss].
+
 
 
 [github]: https://github.com/omoindrot/tensorflow-triplet-loss
@@ -223,3 +248,6 @@ Link: [Openface blog post][openface-blog]
 [facenet]: https://arxiv.org/abs/1503.03832
 [in-defense]: https://arxiv.org/abs/1703.07737
 [reminiz]: https://reminiz.com
+[triplet-loss-file]: https://github.com/omoindrot/tensorflow-triplet-loss/blob/master/model/triplet_loss.py
+[triplet-loss-test]: https://github.com/omoindrot/tensorflow-triplet-loss/blob/master/tests/test_triplet_loss.py
+[tf-triplet-loss]: https://www.tensorflow.org/api_docs/python/tf/contrib/losses/metric_learning/triplet_semihard_loss
