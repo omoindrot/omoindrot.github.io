@@ -10,6 +10,8 @@ mathjax: true
 comments: true
 ---
 
+TODO: clarify intro for people who don't know triplet loss
+
 About two years ago, I was doing face recognition during my internship at [Reminiz][reminiz] and I answered a [question][stackoverflow] on stackoverflow about implementing triplet loss in TensorFlow. I concluded by saying:
 
 >Clearly, implementing triplet loss in Tensorflow is hard, and there are ways to make it more efficient than sampling in python but explaining them would require a whole blog post !
@@ -105,22 +107,23 @@ We have defined a loss on triplets of embeddings, and have seen that some triple
 
 **Offline triplet mining**
 
-The first way to produce triplets is to compute them offline, at the beginning of each epoch for instance.
+The first way to produce triplets is to find them offline, at the beginning of each epoch for instance.
 We compute all the embeddings on the training set, and then only select hard or semi-hard triplets.
 We can then train one epoch on these triplets.
 
+Concretely, we would produce a list of triplets $(i, j, k)$.
+We would then create batches of these triplets of size $B$, which means we will have to compute $3B$ embeddings to get the $B$ triplets.
+
+TODO: clarify
 Overall this technique is not very efficient since we need to do a full pass on the training set to generate triplets.
 It also requires to update the offline mined triplets regularly.
 
-Moreover, we need to compute $3B$ embeddings to only get $B$ triplets.
-
-<br>
 **Online triplet mining**
 
 Online triplet mining was introduced in *Facenet* and has been well described by Brandom Amos in his blog post [*OpenFace 0.2.0: Higher accuracy and halved execution time*][openface-blog].
 
 The idea here is to compute useful triplets on the fly, for each batch of inputs.
-Given a batch of $B$ examples, we can find a maximum of $B^3$ triplets.
+Given a batch of $B$ examples (for instance $B$ images of faces), we can find a maximum of $B^3$ triplets.
 Of course, most of these triplets are not **valid** (i.e. they don't have 2 positives and 1 negative).
 Among valid triplets, most will be *easy triplets* with loss $0$.
 
@@ -131,6 +134,8 @@ This technique gives you more triplets for a single batch of inputs, and doesn't
 
 Detailed explanation in the paper [*In Defense of the Triplet Loss for Person Re-Identification*][in-defense]
 
+- suppose you have a batch of $P$ persons and $K$ images each
+  - total of $PK(K-1)(PK-K)$ valid triplets
 - batch all
 - batch hard
 
@@ -177,24 +182,68 @@ Since we have triplets, it will be easier to work with 3D tensors of shape $(B, 
 This is useful because an element at index `(i, j, k)` will refer to the triplet with anchor $i$, positive $j$ and negative $k$.
 
 We will first compute the distance matrix in an efficient way:
+$$
+d(i, j) = ||f(i) - f(j)||^2
+d(i, j) = ||f(i)||^2 - 2 <f(i), f(j)> + ||f(j)||^2
+$$
 
 
 - distance matrix
 
-- reshape to $(B, B, 1)$ for $d(a, p)$
-- reshape to $(B, 1, B)$ for $d(a, n)$
+- the core idea here is to use clever broadcasting to compute the triplet loss
+    - reshape to $(B, B, 1)$ for $d(a, p)$
+    - reshape to $(B, 1, B)$ for $d(a, n)$
+    - if we take the difference and add the margin, we obtain: $L(a, p, n) = d(a, p) - d(a, n) + margin$
 
-In our case we work
-$$
-d(a, p) - d(a, n) + margin = ||a - p||^2 - ||
-$$
 
 **Batch all strategy**
 - we can combine and get the triplet loss
 
 ```python
-triplet_loss = positive_norm - 2.0 * anchor_positive_dot_product - \
-               negative_norm + 2.0 * anchor_negative_dot_product + margin
+def batch_all_triplet_loss(labels, embeddings, margin, squared=False):
+    """Builds the triplet loss over a batch of embeddings.
+
+    We generate all the valid triplets and average the loss over the positive ones.
+
+    Args:
+        labels: labels of the batch, of size (batch_size,)
+        embeddings: tensor of shape (batch_size, embed_dim)
+        margin: margin for triplet loss
+        squared: Boolean. If true, output is the pairwise squared euclidean distance matrix.
+                 If false, output is the pairwise euclidean distance matrix.
+
+    Returns:
+        triplet_loss: scalar tensor containing the triplet loss
+    """
+    # Get the pairwise distance matrix
+    pairwise_dist = _pairwise_distances(embeddings, squared=squared)
+
+    anchor_positive_dist = tf.expand_dims(pairwise_dist, 2)  # shape (batch_size, batch_size, 1)
+    anchor_negative_dist = tf.expand_dims(pairwise_dist, 1)  # shape (batch_size, 1, batch_size)
+
+    # Compute a 3D tensor of size (batch_size, batch_size, batch_size)
+    # triplet_loss[i, j, k] will contain the triplet loss of anchor=i, positive=j, negative=k
+    triplet_loss = anchor_positive_dist - anchor_negative_dist + margin
+
+    # Put to zero the invalid triplets
+    # (where label(a) != label(p) or label(n) == label(a) or a == p)
+    mask = _get_triplet_mask(labels)
+    mask = tf.cast(mask, tf.float32)
+    triplet_loss = mask * triplet_loss
+
+    # Remove negative losses (i.e. the easy triplets)
+    triplet_loss = tf.maximum(triplet_loss, 0.0)
+
+    # Count number of positive triplets (where triplet_loss > 0)
+    valid_triplets = tf.cast(tf.greater(triplet_loss, 1e-16), tf.float32)
+    num_positive_triplets = tf.reduce_sum(valid_triplets)
+    num_valid_triplets = tf.reduce_sum(mask)
+    fraction_positive_triplets = num_positive_triplets / (num_valid_triplets + 1e-16)
+
+    # Get final mean triplet loss over the positive valid triplets
+    triplet_loss = tf.reduce_sum(triplet_loss) / (num_positive_triplets + 1e-16)
+
+    return triplet_loss, fraction_positive_triplets
 ```
 
 - now we need to remove the invalid triplets: ...
@@ -222,6 +271,14 @@ To check yourself that the tests pass, run:
 ```bash
 python -m tests.test_triplet_loss
 ```
+
+## Experience with MNIST
+
+TODO? 
+
+- see how it works
+- produce some metrics?
+- plot the embeddings in TensorBoard?
 
 ## Conclusion
 
