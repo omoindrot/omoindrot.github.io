@@ -60,9 +60,8 @@ Triplet loss in this case is a way to learn good embeddings for each face. In th
 
 ### Definition of the loss
 
-|![triplet-loss-img] |
-|:--:|
-| *Triplet loss on two positive faces (Obama) and one negative face (Macron)* |
+![triplet-loss-img]
+<center><i>Triplet loss on two positive faces (Obama) and one negative face (Macron)</i></center>
 
 <br>
 
@@ -100,9 +99,8 @@ Each of these definitions depend on where the negative is, relatively to the anc
 
 The figure below shows the three corresponding regions of the embedding space for the negative.
 
-|![triplet-types-img] |
-|:--:|
-| *The three types of negatives, given an anchor and a positive* |
+![triplet-types-img]
+<center><i>The three types of negatives, given an anchor and a positive</i></center>
 
 
 <br>
@@ -135,9 +133,8 @@ Of course, most of these triplets are not **valid** (i.e. they don't have 2 posi
 
 This technique gives you more triplets for a single batch of inputs, and doesn't require any offline mining. It is therefore much more efficient. We will see an implementation of this in the last [part](#a-better-implementation-with-online-triplet-mining).
 
-|![online-triplet-loss-img] |
-|:--:|
-| *Triplet loss with online mining: triplets are computed on the fly from a batch of embeddings* |
+![online-triplet-loss-img]
+<center><i>Triplet loss with online mining: triplets are computed on the fly from a batch of embeddings</i></center>
 
 <br>
 
@@ -473,9 +470,13 @@ And run tensorboard in the experiment directory:
 tensorboard --logdir experiments/base_model
 ```
 
-|![embeddings-img] |
-|:--:|
-| *Embeddings of the MNIST test images visualized with T-SNE (perplexity 25)* |
+<p align="center">
+<img src="images/embeddings.gif">
+</p>
+
+<p align="center">
+<i>Embeddings of the MNIST test images visualized with T-SNE (perplexity 25)</i>
+</p>
 
 <br>
 
