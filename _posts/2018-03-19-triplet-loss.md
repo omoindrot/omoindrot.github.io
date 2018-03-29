@@ -471,7 +471,7 @@ tensorboard --logdir experiments/base_model
 ```
 
 <p align="center">
-<img src="images/embeddings.gif">
+<img src="assets/triplet_loss/embeddings.gif">
 </p>
 
 <p align="center">
@@ -506,10 +506,10 @@ Finally if you need to remember one thing: **always test your code**, especially
 
 
 [github]: https://github.com/omoindrot/tensorflow-triplet-loss
-[triplet-types-img]: images/triplets.png
-[triplet-loss-img]: images/triplet_loss.png
-[online-triplet-loss-img]: images/online_triplet_loss.png
-[embeddings-img]: images/embeddings.gif
+[triplet-types-img]: assets/triplet_loss/triplets.png
+[triplet-loss-img]: assets/triplet_loss/triplet_loss.png
+[online-triplet-loss-img]: assets/triplet_loss/online_triplet_loss.png
+[embeddings-img]: assets/triplet_loss/embeddings.gif
 [openface-blog]: http://bamos.github.io/2016/01/19/openface-0.2.0/
 [stackoverflow]: https://stackoverflow.com/a/38270293/5098368
 [facenet]: https://arxiv.org/abs/1503.03832
