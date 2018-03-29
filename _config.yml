@@ -30,7 +30,7 @@ plugins:
 
 # Disqus settings for enabling comments
 disqus:
-    shortname: oliviermoindrot
+    shortname: omoindrot-github-io
 
 # Google analytics
 google_analytics: UA-99616226-1
