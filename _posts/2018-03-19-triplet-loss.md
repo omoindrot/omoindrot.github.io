@@ -1,8 +1,8 @@
 ---
 layout: post
 title: Triplet Loss and Online Triplet Mining in TensorFlow
-description: "Triplet loss is known to be difficult to implement, especially if you add the constraints of TensorFlow"
-excerpt: "Triplet loss is known to be difficult to implement, especially if you add the constraints of TensorFlow"
+description: "Triplet loss is known to be difficult to implement, especially if you add the constraints of TensorFlow."
+excerpt: "Triplet loss is known to be difficult to implement, especially if you add the constraints of TensorFlow."
 author: "Olivier Moindrot"
 date:   2018-03-19
 permalink: /triplet-loss
