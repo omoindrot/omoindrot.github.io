@@ -125,7 +125,7 @@ It also requires to update the offline mined triplets regularly.
 
 **Online triplet mining**
 
-Online triplet mining was introduced in *Facenet* and has been well described by Brandom Amos in his blog post [*OpenFace 0.2.0: Higher accuracy and halved execution time*][openface-blog].
+Online triplet mining was introduced in *Facenet* and has been well described by Brandon Amos in his blog post [*OpenFace 0.2.0: Higher accuracy and halved execution time*][openface-blog].
 
 The idea here is to compute useful triplets on the fly, for each batch of inputs.
 Given a batch of $B$ examples (for instance $B$ images of faces), we compute the $B$ embeddings and we then can find a maximum of $B^3$ triplets.
@@ -266,7 +266,7 @@ We then take the square root, and replace the values $\sqrt{\epsilon}$  with `0.
 
 ### Batch all strategy
 
-In this strategy, we want to compute the tripet loss on almost all triplets.
+In this strategy, we want to compute the triplet loss on almost all triplets.
 In the TensorFlow graph, we want to create a 3D tensor of shape $(B, B, B)$ where the element at index $(i, j, k)$ contains the loss for triplet $(i, j, k)$.
 
 We then get a 3D mask of the valid triplets with function `_get_triplet_mask`.
@@ -459,13 +459,13 @@ The model directory (containing weights, summaries...) is located in `experiment
 Here we use a json file `experiments/base_model/params.json` that specifies all the hyperparameters in the model.
 This file must be created for any new experiment.
 
-Once training is complete (or as soon as some weigths are saved in the model dir), we can visualize the embeddings using TensorBoard.
+Once training is complete (or as soon as some weights are saved in the model directory), we can visualize the embeddings using TensorBoard.
 To do this, run:
 ```bash
 python visualize_embeddings.py --model_dir experiments/base_model
 ```
 
-And run tensorboard in the experiment directory:
+And run TensorBoard in the experiment directory:
 ```bash
 tensorboard --logdir experiments/base_model
 ```
@@ -499,7 +499,7 @@ Finally if you need to remember one thing: **always test your code**, especially
 - [Github repo][github] for this blog post
 - [Facenet paper][facenet] introducing online triplet mining
 - Detailed explanation of online triplet mining in [*In Defense of the Triplet Loss for Person Re-Identification*][in-defense]
-- Blog post by Brandom Amos on online triplet mining: [*OpenFace 0.2.0: Higher accuracy and halved execution time*][openface-blog].
+- Blog post by Brandon Amos on online triplet mining: [*OpenFace 0.2.0: Higher accuracy and halved execution time*][openface-blog].
 - Source code for the built-in TensorFlow function for semi hard online mining triplet loss: [`tf.contrib.losses.metric_learning.triplet_semihard_loss`][tf-triplet-loss].
 - The [coursera lecture][coursera] on triplet loss
 
