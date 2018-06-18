@@ -514,7 +514,7 @@ Finally if you need to remember one thing: **always test your code**, especially
 [stackoverflow]: https://stackoverflow.com/a/38270293/5098368
 [facenet]: https://arxiv.org/abs/1503.03832
 [in-defense]: https://arxiv.org/abs/1703.07737
-[reminiz]: https://reminiz.com
+[reminiz]: http://www.reminiz.com
 [triplet-loss-file]: https://github.com/omoindrot/tensorflow-triplet-loss/blob/master/model/triplet_loss.py
 [triplet-loss-test]: https://github.com/omoindrot/tensorflow-triplet-loss/blob/master/model/tests/test_triplet_loss.py
 [params]: https://github.com/omoindrot/tensorflow-triplet-loss/blob/master/experiments/base_model/params.json
