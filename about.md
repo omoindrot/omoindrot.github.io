@@ -4,10 +4,10 @@ title: About
 permalink: /about/
 ---
 
-I am **Olivier Moindrot**, currently working on a new startup in fraud detection called [Fragment](https://fragment.run) with my co-founder [Guillaume Genthial](https://guillaumegenthial.github.io).
+I am **Olivier Moindrot**, currently working on a new startup in human-in-the-loop operations called [Fragment](https://checkfragment.com) with my co-founder [Guillaume Genthial](https://guillaumegenthial.github.io).
 
 I previously worked with Guillaume at [MetaMap](https://metamap.com) leading the AI team.
-We created and managed a team of 11 people to improve the automation and accuracy of existing systems (document reading, biometrics, identity fraud detection) while developing new features like duplicate fraud detection.
+We created and led the AI team to improve the automation and accuracy of existing systems (document reading, biometrics, identity fraud detection). AI alone wasn't enough, and we had 300 human agents working hand in hand with our systems on edge cases or for quality control and review.
 
 Before that I was an early employee at [Owkin](https://owkin.com), working on medical images as a senior data scientist.
 
